@@ -1,6 +1,5 @@
 [default]
 address = "0.0.0.0"
-limits = { forms = "64 kB", json = "1 MiB"}
 port = 8888
 
 [default.tls]
