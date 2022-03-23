@@ -1,16 +1,24 @@
-use rocket::{get, launch, routes};
+use lrtool::AdobeServer;
 
-#[get("/hello/<name>")]
+#[rocket::get("/hello/<name>")]
 async fn hello(name: Option<&str>) -> String {
     format!("Hello, {}", name.unwrap_or("DEFAULT"))
 }
 
-#[get("/")]
+#[rocket::get("/")]
 async fn index() -> &'static str {
     "Hello, world!"
 }
 
-#[launch]
-fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, hello])
+#[rocket::main]
+async fn main() {
+    rocket::build()
+        .build_adobe()
+        .mount("/", rocket::routes!(index, hello,))
+        .ignite()
+        .await
+        .expect("PROBLEM WITH IGNITE")
+        .launch()
+        .await
+        .expect("PROBLUM WITH LAUNCH");
 }
