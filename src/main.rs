@@ -1,9 +1,4 @@
-use lrtool::AdobeServer;
-
-#[rocket::get("/hello/<name>")]
-async fn hello(name: Option<&str>) -> String {
-    format!("Hello, {}", name.unwrap_or("DEFAULT"))
-}
+use lrtool::AdobeRocket;
 
 #[rocket::get("/")]
 async fn index() -> &'static str {
@@ -14,7 +9,7 @@ async fn index() -> &'static str {
 async fn main() {
     rocket::build()
         .build_adobe()
-        .mount("/", rocket::routes!(index, hello,))
+        .mount("/", rocket::routes!(index,))
         .ignite()
         .await
         .expect("PROBLEM WITH IGNITE")

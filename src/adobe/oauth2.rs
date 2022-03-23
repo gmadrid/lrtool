@@ -46,6 +46,7 @@ pub fn attach_oauth2(rocket: Rocket<Build>) -> Rocket<Build> {
         )
 }
 
+// TODO: do both of these using the Rocket config business.
 fn client_id_from_env() -> String {
     env::var("ADOBE_CLIENT_ID").expect("Missing the ADOBE_CLIENT_ID env var.")
 }
@@ -71,5 +72,5 @@ async fn adobe_callback(token: TokenResponse<Adobe>, cookies: &CookieJar<'_>) ->
             .same_site(SameSite::Lax)
             .finish(),
     );
-    Redirect::to("/hello/callback")
+    Redirect::to("/")
 }
