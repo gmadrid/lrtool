@@ -63,11 +63,13 @@ struct EntitlementDetail {
     status: String,
 }
 
-fn deserialize_adobe_response_body<'a, T>(body: &'a str) -> T where T: Deserialize<'a> {
+fn deserialize_adobe_response_body<'a, T>(body: &'a str) -> T
+where
+    T: Deserialize<'a>,
+{
     if let Some(idx) = body.find('\n') {
         let json = &body[idx + 1..];
-        let obj: T =
-            serde_json::from_str(json).expect("coundn't parse body");
+        let obj: T = serde_json::from_str(json).expect("coundn't parse body");
         return obj;
     } else {
         // TODO: get rid of this panic!
