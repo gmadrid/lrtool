@@ -1,9 +1,9 @@
+use crate::adobe::client::AdobeClient;
 use crate::adobe::oauth2::AdobeOAuthState;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::RequestBuilder;
 use rocket::http::CookieJar;
 use rocket::{Build, Rocket, State};
-use crate::adobe::client::AdobeClient;
 
 mod client;
 mod oauth2;
@@ -14,8 +14,10 @@ pub trait AdobeRocket {
 
 impl AdobeRocket for Rocket<Build> {
     fn build_adobe(self) -> Self {
-        oauth2::attach_oauth2(self)
-            .mount("/adobe", rocket::routes!(adobe_health, adobe_entitlement))
+        oauth2::attach_oauth2(self).mount(
+            "/adobe",
+            rocket::routes!(adobe_catalog, adobe_health, adobe_entitlement),
+        )
     }
 }
 
@@ -49,7 +51,13 @@ async fn adobe_health(state: &State<AdobeOAuthState>) -> () {
 }
 
 #[rocket::get("/entitlement")]
-async fn adobe_entitlement(adobe: AdobeClient) {
+async fn adobe_entitlement(adobe: AdobeClient) -> String {
     let entitlement = adobe.entitlement().await;
-    println!("SPECIAL ENTITLEMENT: {:?}", entitlement);
+    format!("{:?}", entitlement)
+}
+
+#[rocket::get("/catalog")]
+async fn adobe_catalog(adobe: AdobeClient) -> String {
+    let catalog = adobe.retrieve_catalog().await;
+    format!("{:?}", catalog)
 }

@@ -1,32 +1,21 @@
+use crate::adobe::client::response::RetrieveCatalogResponse;
 use crate::adobe::oauth2::AdobeOAuthState;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::RequestBuilder;
+use response::EntitlementResponse;
 use rocket::http::CookieJar;
 use rocket::request::{FromRequest, Outcome};
 use rocket::Request;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 
+mod response;
+
 #[derive(Debug)]
 pub struct AdobeClient {
     // TODO: avoid copying these Strings by making them &'a str.
     client_id: String,
     user_token: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct EntitlementResponse {
-    base: String,
-    id: String,
-    #[serde(rename = "type")]
-    typ: String,
-    email: String,
-    entitlement: EntitlementDetail,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct EntitlementDetail {
-    status: String,
 }
 
 fn deserialize_adobe_response_body<'a, T>(body: &'a str) -> T
@@ -66,6 +55,10 @@ impl AdobeClient {
 
     pub async fn entitlement(&self) -> EntitlementResponse {
         self.send_request("https://lr.adobe.io/v2/account").await
+    }
+
+    pub async fn retrieve_catalog(&self) -> RetrieveCatalogResponse {
+        self.send_request("https://lr.adobe.io/v2/catalog").await
     }
 }
 
