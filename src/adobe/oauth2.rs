@@ -72,5 +72,6 @@ async fn adobe_callback(token: TokenResponse<Adobe>, cookies: &CookieJar<'_>) ->
             .same_site(SameSite::Lax)
             .finish(),
     );
+    //println!("TOKEN:\n{}\nENDTOKEN", token.access_token());
     Redirect::to("/")
 }

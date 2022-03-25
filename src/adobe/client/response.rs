@@ -18,7 +18,7 @@ pub struct EntitlementDetail {
 #[derive(Debug, Deserialize)]
 pub struct RetrieveCatalogResponse {
     base: String,
-    id: String,
+    pub id: String,
     #[serde(rename = "type")]
     typ: String,
     payload: RetrieveCatalogPayload,
@@ -27,4 +27,28 @@ pub struct RetrieveCatalogResponse {
 #[derive(Debug, Deserialize)]
 pub struct RetrieveCatalogPayload {
     name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RetrieveAssetsResponse {
+    pub base: String,
+    pub resources: Vec<AssetResponse>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AssetResponse {
+    pub id: String,
+    pub subtype: String,
+    pub links: Links,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Links {
+    #[serde(rename = "self")]
+    pub self_: Link,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Link {
+    pub href: String,
 }
