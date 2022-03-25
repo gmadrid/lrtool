@@ -1,4 +1,4 @@
-use crate::adobe::client::response::{RetrieveAssetsResponse, RetrieveCatalogResponse};
+use crate::adobe::client::response::{AssetResponse, RetrieveAssetResponse, RetrieveAssetsResponse, RetrieveCatalogResponse};
 use crate::adobe::oauth2::AdobeOAuthState;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::RequestBuilder;
@@ -89,6 +89,14 @@ impl AdobeClient {
 
     pub async fn retrieve_catalog(&mut self) -> RetrieveCatalogResponse {
         self.send_request("https://lr.adobe.io/v2/catalog").await
+    }
+
+    pub async fn retrieve_asset(&mut self, catalog_id: &str, asset_id: &str) -> AssetResponse {
+        let template = "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets/{asset_id}";
+        let uri = template.replace("{catalog_id}", catalog_id)
+            .replace("{asset_id}", asset_id);
+        println!("RETASS url: {}", uri);
+        self.send_request(&uri).await
     }
 
     // TODO: make spew be an internal mutation.

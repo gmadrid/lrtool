@@ -30,6 +30,11 @@ pub struct RetrieveCatalogPayload {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct RetrieveAssetResponse {
+    pub base: String,
+    pub id: String,
+}
+#[derive(Debug, Deserialize)]
 pub struct RetrieveAssetsResponse {
     pub base: String,
     pub resources: Vec<AssetResponse>,

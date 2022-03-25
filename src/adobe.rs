@@ -73,8 +73,12 @@ async fn adobe_image(mut adobe: AdobeClient) -> Vec<u8> {
     let asset = &assets.resources[0];
     println!("ASSET: {:?}", asset);
 
+    adobe.spew_next();
+    let asset_2 = adobe.retrieve_asset(&catalog.id, &asset.id).await;
+    println!("ASSET 2: {:?}", asset_2);
+
     let uri = assets.base + &asset.links.self_.href;
-    println!("URI: {}", uri);
+    println!("RETASS ASS: {}", uri);
 
     adobe.generate_renditions(&catalog.id, &asset.id).await;
 

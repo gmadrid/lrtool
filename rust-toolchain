@@ -1,1 +1,5 @@
-nightly
+# Pin this to an old version for a while because the build breaks
+# as of 2022-03-24.
+[toolchain]
+channel = "nightly-2022-03-23"
+
