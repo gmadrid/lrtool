@@ -55,7 +55,6 @@ async fn adobe_entitlement(adobe: AdobeClient) -> String {
     format!("{:?}", entitlement)
 }
 
-// TODO: no, seriously, make spew be internally mutable.
 #[rocket::get("/catalog")]
 async fn adobe_catalog(adobe: AdobeClient) -> String {
     let catalog = adobe.retrieve_catalog().await;
