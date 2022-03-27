@@ -1,4 +1,6 @@
-use crate::adobe::client::response::{AssetResponse, RetrieveAssetResponse, RetrieveAssetsResponse, RetrieveCatalogResponse};
+use crate::adobe::client::response::{
+    AssetResponse, RetrieveAssetResponse, RetrieveAssetsResponse, RetrieveCatalogResponse,
+};
 use crate::adobe::oauth2::AdobeOAuthState;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::RequestBuilder;
@@ -58,7 +60,13 @@ impl AdobeClient {
     where
         T: DeserializeOwned,
     {
-        let response = self.build_get_request(uri).send().await.unwrap().text().await;
+        let response = self
+            .build_get_request(uri)
+            .send()
+            .await
+            .unwrap()
+            .text()
+            .await;
         if let Ok(body) = response {
             if self.spew {
                 eprintln!("SPEWING: {:?}", body);
@@ -71,13 +79,19 @@ impl AdobeClient {
     }
 
     async fn send_binary_request(&mut self, uri: &str) -> Vec<u8> {
-        let response = self.build_get_request(uri).send().await.unwrap().text().await;
+        let response = self
+            .build_get_request(uri)
+            .send()
+            .await
+            .unwrap()
+            .text()
+            .await;
         if let Ok(body) = response {
             if self.spew {
                 eprintln!("SPEWING: {:?}", body);
                 self.spew = true;
             }
-            return body.into_bytes()
+            return body.into_bytes();
         }
         // TODO: fix the damn error handling
         panic!("WHAT!");
@@ -93,7 +107,8 @@ impl AdobeClient {
 
     pub async fn retrieve_asset(&mut self, catalog_id: &str, asset_id: &str) -> AssetResponse {
         let template = "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets/{asset_id}";
-        let uri = template.replace("{catalog_id}", catalog_id)
+        let uri = template
+            .replace("{catalog_id}", catalog_id)
             .replace("{asset_id}", asset_id);
         println!("RETASS url: {}", uri);
         self.send_request(&uri).await
@@ -101,30 +116,44 @@ impl AdobeClient {
 
     // TODO: make spew be an internal mutation.
     pub async fn retrieve_assets(&mut self, catalog_id: &str) -> RetrieveAssetsResponse {
-        let mut template ="https://lr.adobe.io/v2/catalogs/{catalog_id}/assets";
+        let mut template = "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets";
         let uri = template.replace("{catalog_id}", catalog_id);
         self.send_request(&uri).await
     }
 
     pub async fn generate_renditions(&mut self, catalog_id: &str, asset_id: &str) {
         // TODO: error checking!
-        let mut template = "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets/{asset_id}/renditions";
-        let uri = template.replace("{catalog_id}", catalog_id)
+        let mut template =
+            "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets/{asset_id}/renditions";
+        let uri = template
+            .replace("{catalog_id}", catalog_id)
             .replace("{asset_id}", asset_id);
         println!("GEN URI: {}", uri);
 
-        let foo = dbg!(self.build_post_request(&uri)
+        let foo = dbg!(self
+            .build_post_request(&uri)
             .header("x-generate-renditions", "fullsize,2560"))
-            .send().await.unwrap().text().await.unwrap_or("NOTHING".to_string());
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await
+        .unwrap_or("NOTHING".to_string());
 
         println!("GENERATE:\n{}", foo);
     }
 
     // TODO :make this return something that is not all the bytes.
     // TODO: make "fullsize" an enum.
-    pub async fn retrieve_rendition(&mut self, catalog_id: &str, asset_id: &str, rendition_type: &str) -> Vec<u8> {
+    pub async fn retrieve_rendition(
+        &mut self,
+        catalog_id: &str,
+        asset_id: &str,
+        rendition_type: &str,
+    ) -> Vec<u8> {
         let mut template = "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets/{asset_id}/renditions/{rendition_type}";
-        let uri = template.replace("{catalog_id}", catalog_id)
+        let uri = template
+            .replace("{catalog_id}", catalog_id)
             .replace("{asset_id}", asset_id)
             .replace("{rendition_type}", rendition_type);
 

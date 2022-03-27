@@ -3,8 +3,8 @@ use crate::adobe::oauth2::AdobeOAuthState;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::RequestBuilder;
 use rocket::http::{ContentType, CookieJar};
-use rocket::{Build, Rocket, State};
 use rocket::tokio::fs::File;
+use rocket::{Build, Rocket, State};
 
 mod client;
 mod oauth2;
@@ -66,7 +66,7 @@ async fn adobe_catalog(mut adobe: AdobeClient) -> String {
 
 #[rocket::get("/image")]
 async fn adobe_image(mut adobe: AdobeClient) -> Vec<u8> {
-                                         //(ContentType, File) {
+    //(ContentType, File) {
     let catalog = adobe.retrieve_catalog().await;
     println!("CATALOG: {:?}", catalog);
     let assets = adobe.retrieve_assets(&catalog.id).await;
@@ -82,6 +82,8 @@ async fn adobe_image(mut adobe: AdobeClient) -> Vec<u8> {
 
     adobe.generate_renditions(&catalog.id, &asset.id).await;
 
-    let image_bytes = adobe.retrieve_rendition(&catalog.id, &asset.id , "fullsize").await;
+    let image_bytes = adobe
+        .retrieve_rendition(&catalog.id, &asset.id, "fullsize")
+        .await;
     image_bytes
 }
