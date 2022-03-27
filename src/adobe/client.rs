@@ -1,5 +1,5 @@
 use crate::adobe::client::response::{
-    AssetResponse, RetrieveAssetResponse, RetrieveAssetsResponse, RetrieveCatalogResponse,
+    AssetResponse, RetrieveAssetsResponse, RetrieveCatalogResponse,
 };
 use crate::adobe::oauth2::AdobeOAuthState;
 use reqwest::header::CONTENT_TYPE;
@@ -10,6 +10,7 @@ use rocket::request::{FromRequest, Outcome};
 use rocket::Request;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 mod response;
 
@@ -19,7 +20,7 @@ pub struct AdobeClient {
     client_id: String,
     user_token: String,
 
-    spew: bool,
+    spew: AtomicBool,
 }
 
 fn deserialize_adobe_response_body<'a, T>(body: &'a str) -> T
@@ -28,8 +29,7 @@ where
 {
     if let Some(idx) = body.find('\n') {
         let json: &'a str = &body[idx + 1..];
-        let obj: T = serde_json::from_str(json).expect("coundn't parse body");
-        return obj;
+        serde_json::from_str(json).expect("coundn't parse body")
     } else {
         // TODO: get rid of this panic!
         panic!("What the?");
@@ -37,8 +37,8 @@ where
 }
 
 impl AdobeClient {
-    pub fn spew_next(&mut self) {
-        self.spew = true;
+    pub fn spew_next(&self) {
+        self.spew.store(true, Ordering::Relaxed);
     }
 
     fn build_get_request(&self, url: &str) -> RequestBuilder {
@@ -56,7 +56,7 @@ impl AdobeClient {
             .bearer_auth(&self.user_token)
     }
 
-    async fn send_request<'d, T>(&mut self, uri: &'d str) -> T
+    async fn send_request<'d, T>(&self, uri: &'d str) -> T
     where
         T: DeserializeOwned,
     {
@@ -68,9 +68,9 @@ impl AdobeClient {
             .text()
             .await;
         if let Ok(body) = response {
-            if self.spew {
+            if self.spew.load(Ordering::Relaxed) {
                 eprintln!("SPEWING: {:?}", body);
-                self.spew = true;
+                self.spew.store(false, Ordering::Relaxed);
             }
             return deserialize_adobe_response_body::<T>(&body);
         }
@@ -78,7 +78,7 @@ impl AdobeClient {
         panic!("WHAT!");
     }
 
-    async fn send_binary_request(&mut self, uri: &str) -> Vec<u8> {
+    async fn send_binary_request(&self, uri: &str) -> Vec<u8> {
         let response = self
             .build_get_request(uri)
             .send()
@@ -87,9 +87,9 @@ impl AdobeClient {
             .text()
             .await;
         if let Ok(body) = response {
-            if self.spew {
+            if self.spew.load(Ordering::Relaxed) {
                 eprintln!("SPEWING: {:?}", body);
-                self.spew = true;
+                self.spew.store(false, Ordering::Relaxed)
             }
             return body.into_bytes();
         }
@@ -97,15 +97,15 @@ impl AdobeClient {
         panic!("WHAT!");
     }
 
-    pub async fn entitlement(&mut self) -> EntitlementResponse {
+    pub async fn entitlement(&self) -> EntitlementResponse {
         self.send_request("https://lr.adobe.io/v2/account").await
     }
 
-    pub async fn retrieve_catalog(&mut self) -> RetrieveCatalogResponse {
+    pub async fn retrieve_catalog(&self) -> RetrieveCatalogResponse {
         self.send_request("https://lr.adobe.io/v2/catalog").await
     }
 
-    pub async fn retrieve_asset(&mut self, catalog_id: &str, asset_id: &str) -> AssetResponse {
+    pub async fn retrieve_asset(&self, catalog_id: &str, asset_id: &str) -> AssetResponse {
         let template = "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets/{asset_id}";
         let uri = template
             .replace("{catalog_id}", catalog_id)
@@ -114,17 +114,15 @@ impl AdobeClient {
         self.send_request(&uri).await
     }
 
-    // TODO: make spew be an internal mutation.
-    pub async fn retrieve_assets(&mut self, catalog_id: &str) -> RetrieveAssetsResponse {
-        let mut template = "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets";
+    pub async fn retrieve_assets(&self, catalog_id: &str) -> RetrieveAssetsResponse {
+        let template = "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets";
         let uri = template.replace("{catalog_id}", catalog_id);
         self.send_request(&uri).await
     }
 
-    pub async fn generate_renditions(&mut self, catalog_id: &str, asset_id: &str) {
+    pub async fn generate_renditions(&self, catalog_id: &str, asset_id: &str) {
         // TODO: error checking!
-        let mut template =
-            "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets/{asset_id}/renditions";
+        let template = "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets/{asset_id}/renditions";
         let uri = template
             .replace("{catalog_id}", catalog_id)
             .replace("{asset_id}", asset_id);
@@ -138,7 +136,7 @@ impl AdobeClient {
         .unwrap()
         .text()
         .await
-        .unwrap_or("NOTHING".to_string());
+        .unwrap_or_else(|_| "NOTHING".to_string());
 
         println!("GENERATE:\n{}", foo);
     }
@@ -146,12 +144,12 @@ impl AdobeClient {
     // TODO :make this return something that is not all the bytes.
     // TODO: make "fullsize" an enum.
     pub async fn retrieve_rendition(
-        &mut self,
+        &self,
         catalog_id: &str,
         asset_id: &str,
         rendition_type: &str,
     ) -> Vec<u8> {
-        let mut template = "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets/{asset_id}/renditions/{rendition_type}";
+        let template = "https://lr.adobe.io/v2/catalogs/{catalog_id}/assets/{asset_id}/renditions/{rendition_type}";
         let uri = template
             .replace("{catalog_id}", catalog_id)
             .replace("{asset_id}", asset_id)
@@ -188,9 +186,9 @@ impl<'r> FromRequest<'r> for AdobeClient {
         Outcome::Success(AdobeClient {
             // TODO: get rid of this copy.
             client_id: client_id.to_string(),
-            user_token: user_token,
+            user_token,
 
-            spew: false,
+            spew: AtomicBool::new(false),
         })
     }
 }

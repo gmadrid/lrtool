@@ -8,4 +8,3 @@
       - list of assets
 
 
-

@@ -56,10 +56,10 @@ fn client_secret_from_env() -> String {
 }
 
 #[rocket::get("/login")]
-async fn adobe_login(oauth2: OAuth2<Adobe>, mut cookies: &CookieJar<'_>) -> Redirect {
+async fn adobe_login(oauth2: OAuth2<Adobe>, cookies: &CookieJar<'_>) -> Redirect {
     oauth2
         .get_redirect(
-            &mut cookies,
+            cookies,
             &["openid", "lr_partner_apis", "lr_partner_rendition_apis"],
         )
         .unwrap()

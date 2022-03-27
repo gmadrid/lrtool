@@ -2,8 +2,6 @@ use crate::adobe::client::AdobeClient;
 use crate::adobe::oauth2::AdobeOAuthState;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::RequestBuilder;
-use rocket::http::{ContentType, CookieJar};
-use rocket::tokio::fs::File;
 use rocket::{Build, Rocket, State};
 
 mod client;
@@ -40,7 +38,7 @@ fn build_adobe_oauth_request(
 }
 
 #[rocket::get("/health")]
-async fn adobe_health(state: &State<AdobeOAuthState>) -> () {
+async fn adobe_health(state: &State<AdobeOAuthState>) {
     let response =
         build_adobe_oauth_request("http://lr.adobe.io/v2/health", &state.client_id, None)
             .send()
@@ -52,20 +50,20 @@ async fn adobe_health(state: &State<AdobeOAuthState>) -> () {
 }
 
 #[rocket::get("/entitlement")]
-async fn adobe_entitlement(mut adobe: AdobeClient) -> String {
+async fn adobe_entitlement(adobe: AdobeClient) -> String {
     let entitlement = adobe.entitlement().await;
     format!("{:?}", entitlement)
 }
 
 // TODO: no, seriously, make spew be internally mutable.
 #[rocket::get("/catalog")]
-async fn adobe_catalog(mut adobe: AdobeClient) -> String {
+async fn adobe_catalog(adobe: AdobeClient) -> String {
     let catalog = adobe.retrieve_catalog().await;
     format!("{:?}", catalog)
 }
 
 #[rocket::get("/image")]
-async fn adobe_image(mut adobe: AdobeClient) -> Vec<u8> {
+async fn adobe_image(adobe: AdobeClient) -> Vec<u8> {
     //(ContentType, File) {
     let catalog = adobe.retrieve_catalog().await;
     println!("CATALOG: {:?}", catalog);
